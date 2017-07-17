@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <sstream>
@@ -11,31 +11,42 @@
 #include <math.h>
 #include <stdbool.h>
 using namespace cv;
+using namespace std;
 
-/*
-void IOUcalc()
-{
-	if(D[i])
-	A =  
-	float left = max(), right = min(a[2], b[2]);
-	float top = max(a[1], b[1]), bottom = min(a[3], b[3]);
-	float width = max(right - left + 1, 0.f), height = max(bottom - top + 1, 0.f);
-	float interS = width * height;
-	float Sa = (a[2] - a[0] + 1) * (a[3] - a[1] + 1);
-	float Sb = (b[2] - b[0] + 1) * (b[3] - b[1] + 1);
-	return interS / (Sa + Sb - interS);
-}*/
+
+
 struct boxes
 {
 	float x,y,w,h,s;
 
 }typedef box;
 
+
+
+float IOUcalc(box b1, box b2)
+{
+	float ai = (float)(b1.w + 1)*(b1.h + 1);
+	float aj = (float)(b2.w + 1)*(b2.h + 1);
+	float x_inter, x2_inter, y_inter, y2_inter;
+
+	x_inter = max(b1.x,b1.x);
+	y_inter = max(b1.y,b2.y);
+	
+	x2_inter = min((b1.x + b1.w),(b2.x + b2.w));
+	y2_inter = min((b1.y + b1.h),(b2.y + b2.h));
+	
+	float w = (float)max((float)0, x2_inter - x_inter);  
+	float h = (float)max((float)0, y2_inter - y_inter);  
+	
+	float inter = ((w*h)/(ai + aj - w*h));
+	return inter;
+}
+
+
 void nms_best(box *b, int count, bool *res)
 {
-	float w,h,a;
-	float theta = 0.6;
-	printf("B[1] = %f",min((b[0].x + b[0].w),(b[1].x + b[1].w)) - max(b[0].x, b[1].x));
+
+	float theta = 0.000001;
 
     for(int i=0; i<count; i++)
     {
@@ -45,21 +56,17 @@ void nms_best(box *b, int count, bool *res)
     for(int i=0; i<count; i++)
     {
     	 
-    	for(int j=0; j<count; j++)
+    	for(int j=0; j<count,j!=i; j++)
     	{
 
-    		if(b[i].s < b[j].s)
+    		if(b[i].s > b[j].s)
 	 		{
-
-	 			a = (float)(b[j].x + 1)*(b[j].y + 1);
-	 			w = (float)max((float)0,(min((b[i].x + b[i].w),(b[j].x + b[j].w)) - max(b[i].x,b[j].x)));  
-	 			h = (float)max((float)0,min((b[i].y + b[i].h),(b[j].y + b[j].h)) - max(b[i].y,b[j].y));  
-	 			if((w*h)/a > theta && b[j].w > 0)
-	 			{
-	 				printf("\n%d--%d\n",i,j);
-	 			
+	 		
+	 			if(IOUcalc(b[i],b[j]) > theta)
+	 			{ 
 	 				res[j] = false; 
 	 			}
+
 			}
 
     	}
@@ -70,27 +77,29 @@ void nms_best(box *b, int count, bool *res)
 
 
 
-
-void nms_binary(box *b, int count, bool *res)
+/*void nms_binary(box *b, int count, bool *res)
 {
 	float w,h,a;
-	float theta = 0.6;
+	float theta = 0.01;
 	printf("B[1] = %f",min((b[0].x + b[0].w),(b[1].x + b[1].w)) - max(b[0].x, b[1].x));
 	bool bool_mat[count*count];
 
     for(int i=0; i<count; i++)
     {
+    	float ai = (float)(b[i].x + 1)*(b[i].y + 1);
     	for(int j=0; j<count; j++)
     	{
     		bool_mat[i*count + j] = false;
-    		if(b[i].s < b[j].s)
+    		printf("\nScore: %f",b[j].s);
+    		if(b[i].s > b[j].s)
 	 		{
-	 			a = (float)(b[j].x + 1)*(b[j].y + 1);
+	 			
+	 			float aj = (float)(b[j].x + 1)*(b[j].y + 1);
 	 			w = (float)max((float)0,(min((b[i].x + b[i].w),(b[j].x + b[j].w)) - max(b[i].x,b[j].x)));  
 	 			h = (float)max((float)0,min((b[i].y + b[i].h),(b[j].y + b[j].h)) - max(b[i].y,b[j].y));  
-	 			if((w*h)/a > theta && b[j].w > 0)
+	 			if((w*h)/(ai + aj - w*h)> theta && b[j].w > 0)
 	 			{
-	 				printf("\n%d--%d\n",i,j);
+	 				//printf("\n%d--%d\n",i,j);
 	 				bool_mat[i*count + j] = true;
 
 	 			}
@@ -102,14 +111,7 @@ void nms_binary(box *b, int count, bool *res)
     	
     }
 
-    for(int i=0; i<count; i++)
-    {
-    	for(int j=0; j<count; j++)
-    	{
-  			printf("%d  ",(bool_mat[i*count + j]) ? 1 : 0);
-    	}
-    	printf("\n");
-    }
+  
 
      int sum[count];
     for(int j=0; j<count; j++)
@@ -130,32 +132,67 @@ void nms_binary(box *b, int count, bool *res)
     	}
     }
     
+}
+*/
 
-
-
-
+box rnd_box(int ref_x, int ref_y)
+{
+	box b;
+	b.x =ref_x + (rand()%300) - 200 ;
+	b.y =ref_y + (rand()%150) - 100;
+	b.w = rand()%370+30;
+	b.h = b.w*2;
+	b.s = (float)rand() / (float)RAND_MAX; 
+	return b;
 }
 
 int main()
 {
-	Mat temp = imread("/home/jeetkanjani7/crop001025b.png",1);
-	
-	int count =3;
-	box b[3];
-	b[1].x = 16; b[1].y = 12; b[1].w = 64; b[1].h = 128; b[1].s = 0.79062;
-	b[2].x = 12; b[2].y = 14; b[2].w = 70; b[2].h = 141; b[2].s = 0.60434 ;
-	b[0].x = 11; b[0].y = 6; b[0].w = 74; b[0].h = 148; b[0].s = 0.11855;
-	
-	bool res1[count] = {false,false,false};
-	bool res2[count] = {false,false,false};
+	string text;
+	int fontFace = FONT_HERSHEY_SCRIPT_SIMPLEX;
+	double fontScale = 1;
+	int thickness = 2;
 
-	
-	nms_best(b,3,res1);
-	nms_binary(b, 3, res2);
 
-	for(int i =0; i<3 ; i++)
+	int baseline=0;
+	Size textSize = getTextSize(text, fontFace,
+                            fontScale, thickness, &baseline);
+	baseline += thickness;
+
+
+
+
+	srand (time(NULL));
+	Mat temp = imread("/home/jeetkanjani7/test_image.jpg",1);
+
+	int count=10;
+	
+	box b[count];
+	int ref_x = rand()%(1920 -600);
+	int ref_y = rand()%(1080 -600);
+
+
+	bool res1[count];
+	bool res2[count];
+
+	for(int i = 0; i<count; i++)
 	{
-		printf("%d -- %d\n",res1[i]?1:0,res2[i]?1:0);
+		b[i] = rnd_box(ref_x ,ref_y );
+		res1[i] = false;
+		res2[i] = false;
+	}
+	
+
+	
+
+
+	
+	nms_best(b,count,res2);
+//	nms_binary(b, count, res1);
+/*
+	for(int i =0; i<count ; i++)
+	{
+	//	printf("%d -- %d\n",res1[i]?1:0,res2[i]?1:0);
 		if(res2[i] != res1[i])
 		{
 			printf("Sorry bruh! %d",i);
@@ -164,15 +201,39 @@ int main()
 		
 	}
 	
+*/
 
-	for(int i =0; i<3 ; i++)
+
+		
+	Point textOrg((temp.cols - textSize.width)/2,
+              (temp.rows + textSize.height)/2);
+
+
+	for(int i =0; i<count ; i++)
 	{
+		std::ostringstream ss;
+			ss <<b[i].s;
+			string text(ss.str());
+			Size textSize = getTextSize(text, fontFace,fontScale, thickness, &baseline);
 		if(res2[i])
 		{
-			printf("Results= %d",i);
-			rectangle(temp,Point(b[i].x,b[i].y),Point(b[i].x + b[i].w,b[i].y + b[i].h),Scalar(100,100,100),2,8,0);
+			//printf("Results= %d",i);
+			rectangle(temp,Point(b[i].x,b[i].y),Point(b[i].x + b[i].w,b[i].y + b[i].h),Scalar(255,0,0),2,8,0);
+			//line(temp, Point(b[i].x,b[i].y),Point(b[i].x + b[i].w,b[i].y + b[i].h), Scalar(255, 0, 0));
+			putText(temp, text,  Point(b[i].x,b[i].y), fontFace, fontScale,Scalar(255,0,0), thickness, 8);
+
 		}
+		else
+		{
+			rectangle(temp,Point(b[i].x,b[i].y),Point(b[i].x + b[i].w,b[i].y + b[i].h),Scalar(0,0,255),2,8,0);
+			
+			//line(temp, Point(b[i].x,b[i].y),Point(b[i].x + b[i].w,b[i].y + b[i].h), Scalar(255, 0, 0));
+			putText(temp, text,  Point(b[i].x,b[i].y), fontFace, fontScale,Scalar(0,0,255), thickness, 8);
+		}
+		
 	}
+
+	
 
 	imshow("nms_bool",temp);
 	waitKey(0);
