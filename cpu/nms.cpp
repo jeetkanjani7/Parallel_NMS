@@ -46,7 +46,7 @@ float IOUcalc(box b1, box b2)
 void nms_best(box *b, int count, bool *res)
 {
 
-	float theta = 0.000001;
+	float theta = 0.15;
 
     for(int i=0; i<count; i++)
     {
@@ -56,7 +56,7 @@ void nms_best(box *b, int count, bool *res)
     for(int i=0; i<count; i++)
     {
     	 
-    	for(int j=0; j<count,j!=i; j++)
+    	for(int j=0; j<count; j++)
     	{
 
     		if(b[i].s > b[j].s)
@@ -68,6 +68,8 @@ void nms_best(box *b, int count, bool *res)
 	 			}
 
 			}
+    			
+    		
 
     	}
     	

@@ -26,6 +26,27 @@ typedef struct
 
 }box;
 
+__device__
+float IOUcalc(box b1, box b2)
+{
+	float ai = (float)(b1.w + 1)*(b1.h + 1);
+	float aj = (float)(b2.w + 1)*(b2.h + 1);
+	float x_inter, x2_inter, y_inter, y2_inter;
+
+	x_inter = max(b1.x,b1.x);
+	y_inter = max(b1.y,b2.y);
+	
+	x2_inter = min((b1.x + b1.w),(b2.x + b2.w));
+	y2_inter = min((b1.y + b1.h),(b2.y + b2.h));
+	
+	float w = (float)max((float)0, x2_inter - x_inter);  
+	float h = (float)max((float)0, y2_inter - y_inter);  
+	
+	float inter = ((w*h)/(ai + aj - w*h));
+	return inter;
+}
+
+
 
 __global__
 void NMS_GPU(box *d_b, int count, bool *d_res)
@@ -34,19 +55,16 @@ void NMS_GPU(box *d_b, int count, bool *d_res)
 	//int abs_x = (blockIdx.x * blockDim.x) +threadId.x;
 	int Id = (blockIdx.x * blockDim.x) + threadIdx.x;
 
-    float w,h,a;
+    
     float theta = 0.6;
-   	printf("\n%d--%f\n",Id,d_b[Id].x);
+   	printf("\n%d--%f\n",d_res[Id]?1:0,d_b[Id].x);
     
     for(int i = 0;i<count; i++)
     {
     	
-    	if(d_b[i].s<d_b[Id].s)
+    	if(d_b[i].s < d_b[Id].s)
     	{
-    		a = (float)(d_b[Id].x + 1)*(d_b[Id].y + 1);
-	 		w = (float)max((float)0,(min((d_b[i].x + d_b[i].w),(d_b[Id].x + d_b[Id].w)) - max(d_b[i].x,d_b[Id].x)));  
-	 		h = (float)max((float)0,min((d_b[i].y + d_b[i].h),(d_b[Id].y + d_b[Id].h)) - max(d_b[i].y,d_b[Id].y));  
-	 		if((w*h)/a > theta && d_b[Id].w > 0)
+    		if(IOUcalc(d_b[i],d_b[Id])>theta)
 	 		{
 	 			d_res[i] = false; 
 	 		}
@@ -56,12 +74,15 @@ void NMS_GPU(box *d_b, int count, bool *d_res)
 
 
 
+
+
 int main()
 {
+	int count =3;
 	Mat temp = imread("/home/jeetkanjani7/crop001025b.png",1);
 	
-	int count =3;
 	bool *h_res =(bool *)malloc(sizeof(bool)*count);
+	
 	for(int i=0; i<count; i++)
 	{
 		h_res[i] = true;
@@ -73,7 +94,7 @@ int main()
 	b[2].x = 12; b[2].y = 14; b[2].w = 70; b[2].h = 141; b[2].s = 0.60434 ;
 	b[0].x = 11; b[0].y = 6; b[0].w = 74; b[0].h = 148; b[0].s = 0.11855;
 
-	printf("%d",(int)b[0].x);
+	
 	box *d_b;
 	bool *d_res;
 	
@@ -82,8 +103,8 @@ int main()
 
 	gpuErrchk(cudaMalloc((void**)&d_b,sizeof(box)*count));
 	gpuErrchk(cudaMemcpy(d_b, b,sizeof(box)*count, cudaMemcpyHostToDevice));
-	
-	NMS_GPU<<<1,count>>>(b,count,d_res);
+		
+	NMS_GPU<<<1,count>>>(d_b,count,d_res);
 	cudaThreadSynchronize();
 	
 	gpuErrchk(cudaMemcpy(h_res, d_res, sizeof(bool)*count, cudaMemcpyDeviceToHost));
