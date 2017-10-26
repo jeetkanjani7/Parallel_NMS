@@ -79,6 +79,10 @@ void nms_best(box *b, int count, bool *res)
 
 
 
+
+
+
+
 /*void nms_binary(box *b, int count, bool *res)
 {
 	float w,h,a;

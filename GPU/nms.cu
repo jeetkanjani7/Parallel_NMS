@@ -49,27 +49,24 @@ float IOUcalc(box b1, box b2)
 
 
 __global__
-void NMS_GPU(box *d_b, int count, bool *d_res)
+void NMS_GPU(box *d_b, bool *d_res)
 {
-	//int abs_y = (blockIdx.y * blockDim.y) + threadIdx.y;
-	//int abs_x = (blockIdx.x * blockDim.x) +threadId.x;
-	int Id = (blockIdx.x * blockDim.x) + threadIdx.x;
+	int abs_y = (blockIdx.y * blockDim.y) + threadIdx.y;
+	int abs_x = (blockIdx.x * blockDim.x) +threadIdx.x;
+
 
     
     float theta = 0.6;
-   	printf("\n%d--%f\n",d_res[Id]?1:0,d_b[Id].x);
+
     
-    for(int i = 0;i<count; i++)
-    {
-    	
-    	if(d_b[i].s < d_b[Id].s)
+  	if(d_b[abs_x].s < d_b[abs_y].s)
     	{
-    		if(IOUcalc(d_b[i],d_b[Id])>theta)
-	 		{
-	 			d_res[i] = false; 
-	 		}
+    		if(IOUcalc(d_b[abs_y],d_b[abs_x])>theta)
+		{
+	 		d_res[abs_x] = false; 
+	 	}
     	}
-    }
+  
 }
 
 
@@ -79,7 +76,7 @@ void NMS_GPU(box *d_b, int count, bool *d_res)
 int main()
 {
 	int count =3;
-	Mat temp = imread("/home/jeetkanjani7/crop001025b.png",1);
+	Mat temp = imread("/home/jeetkanjani7/pedestrian_imgs/crop001025b.png",1);
 	
 	bool *h_res =(bool *)malloc(sizeof(bool)*count);
 	
@@ -104,14 +101,15 @@ int main()
 	gpuErrchk(cudaMalloc((void**)&d_b,sizeof(box)*count));
 	gpuErrchk(cudaMemcpy(d_b, b,sizeof(box)*count, cudaMemcpyHostToDevice));
 		
-	NMS_GPU<<<1,count>>>(d_b,count,d_res);
+	NMS_GPU<<<dim3(1,count,1),count>>>(d_b,d_res);
+	
 	cudaThreadSynchronize();
 	
 	gpuErrchk(cudaMemcpy(h_res, d_res, sizeof(bool)*count, cudaMemcpyDeviceToHost));
 	
 	for(int i =0; i<3 ; i++)
 	{
-		printf("\nResults= %d--%d ",i,*(h_res+i));
+		
 		if(*(h_res+i) == true)
 		{
 			printf("Results= %d--%d ",i,*(h_res+i));
