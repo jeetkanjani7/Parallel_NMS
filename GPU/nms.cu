@@ -33,7 +33,7 @@ float IOUcalc(box b1, box b2)
 	float aj = (float)(b2.w + 1)*(b2.h + 1);
 	float x_inter, x2_inter, y_inter, y2_inter;
 
-	x_inter = max(b1.x,b1.x);
+	x_inter = max(b1.x,b2.x);
 	y_inter = max(b1.y,b2.y);
 	
 	x2_inter = min((b1.x + b1.w),(b2.x + b2.w));
