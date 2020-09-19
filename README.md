@@ -1,4 +1,4 @@
-# Parallel_NMS
+# Parallel NMS
 
 Parallel CUDA implementation of NON maximum Suppression. I did not find good GPU implementation of NMS so wrote my own.
 
@@ -27,3 +27,22 @@ The repository gives you CPU and GPU implementation of NMS.
 References:
 
 [1] David Oro, Carles Fernandez, Xavier Martorell, Javier Hernando. Work-Efficient Parallel non-maximum suppression for embedded GPU architecture,Herta Security, Barcelona, Spain.
+
+### Project Structure
+
+```
+
+├── CPU
+│   ├── Makefile
+│   ├── nms.cpp
+│   └── nms.o
+├── GPU
+│   ├── Makefile
+│   ├── nms_2d
+│   ├── nms_2d.cu
+│   └── nms_2d.o
+├── README.md
+└── scores.txt
+└── boxes.txt
+```
+
