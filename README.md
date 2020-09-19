@@ -1,10 +1,29 @@
 # Parallel_NMS
-Parallel CUDA implementation of NON maximum Suppression
 
-Scanning the classifier across all positions and scales in the image yields multiple detections for the same object at similar scales and positions. Multiple overlapping detections need to be fused together. Standard mean shift algorithm requires a lot of random memory reads and writes. So we have come up with a much simpler parallelizable algorithm which takes the window with the maximum score, and then reject the remaining candidate windows if they have an intersection over union (IoU) larger than a learned threshold. We use the concept of adopting a map/reduce parallelization pattern which uses a boolean matrix both to encode candidate object detections and to compute their cluster Representatives
-Non-maximum suppression is used as an intermediate step in many comptuer vision algorithms.
+Parallel CUDA implementation of NON maximum Suppression. I did not find good GPU implementation of NMS so wrote my own.
 
-This repo gives you CPU and GPU implementation of NMS. I did not find good GPU implementation of NMS so wrote my own.
+Scanning the classifier across all positions and scales in the image yields multiple detections for the same object at similar scales and positions. NMS is the process of selecting a single representative candidate within this cluster of detections. It has a wide range of applications including object detection speech segmentation, etc.
 
-References: David Oro, Carles Fernandez, Xavier Martorell, Javier Hernando. Work-Efficient Parallel
-non-maximum suppression for embedded GPU architecture,Herta Security, Barcelona, Spain.
+Problems with the existing standard NMS techniques:
+
+Standard mean shift algorithm requires a lot of random memory reads and writes.
+k-means requires a predetermined number of clusters which is unknown and difficult to estimate before time. Also, it only identifies convex clusters - so it cannot handle non linear data.
+Affinity propagation clustering algorithm is unworkable as it reports latency of 1000 ms to cluster around 250 canditates.
+The proposal addresses this issue by adopting a map/reduce parallization pattern which uses a boolean matrix to encode candidate object detection bounding boxes.
+
+For a boolean matrix of size dmax * dmax:
+
+assign 1 or 0 based on the IOU of two bbox’s di and dj being greater than a threshold.
+cancel out (assign -1) to (di, dj) where Area(di) is strictly less than Area(dj).
+perform and reductions across rows and put results into a vector dmax (1 only if all candidates in the row are not -1).
+The above technique will result into a single representative per cluster.
+
+GPU implementation is divided into Map and Reduce Kernel:
+
+The Map kernel creates the area of the box and creates the boolean matrix.
+Reduce kernel performs the and reduction.
+The repository gives you CPU and GPU implementation of NMS.
+
+References:
+
+[1] David Oro, Carles Fernandez, Xavier Martorell, Javier Hernando. Work-Efficient Parallel non-maximum suppression for embedded GPU architecture,Herta Security, Barcelona, Spain.

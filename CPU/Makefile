@@ -12,13 +12,13 @@ NVCC_OPTS=-O3 -arch=sm_30 -Xcompiler -Wall -Xcompiler -Wextra -m64
 GCC_OPTS=-m64 
 
 nms: nms.o 
-	nvcc -o nms_2d nms_2d.o -L $(OPENCV_LIBPATH) $(OPENCV_LIBS) $(NVCC_OPTS) 
+	g++ -o nms nms.o -L $(OPENCV_LIBPATH) $(OPENCV_LIBS)  
 
 #main.o: main.cpp 
 #g++ -c main.cpp $(GCC_OPTS) -I $(CUDA_INCLUDEPATH) -I $(OPENCV_INCLUDEPATH)
 
-nms.o: nms.cu
-	nvcc -c nms_2d.cu $(OPENCV_INCLUDEPATH) $(NVCC_OPTS)
+nms.o: nms.cpp
+	g++ -c nms.cpp $(OPENCV_INCLUDEPATH) $(OPENCV_LIBS)
 
 
 clean:

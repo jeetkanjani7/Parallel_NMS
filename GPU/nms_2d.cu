@@ -8,6 +8,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include <stdbool.h>
 #include <math.h>
+
 using namespace cv;
 using namespace std;
 
@@ -51,7 +52,6 @@ float IOUcalc(box b1, box b2)
 }
 
 
-
 __global__
 void NMS_GPU(box *d_b, bool *d_res)
 {
@@ -93,7 +93,7 @@ int main()
     std::ifstream in;
     std::string line;
     
-    in.open("boxes.txt"); //y1, x1, y2, x2
+    in.open("../boxes.txt"); //y1, x1, y2, x2
     if (in.is_open()) 
     {
         int i = 0;
@@ -112,7 +112,7 @@ int main()
     }
     in.close();
     
-    in.open("scores.txt");
+    in.open("../scores.txt");
     if (in.is_open()) 
     {
         int i = 0;
@@ -156,6 +156,7 @@ int main()
         {
             printf("%d ",i);
         }
+        
     }
 
     return 0;
